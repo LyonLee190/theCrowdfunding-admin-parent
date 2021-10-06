@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<html lang="zh-CN">
+<head th:replace="myTemplate::header"></head>
+<body>
+<nav th:replace="myTemplate::navbar"></nav>
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="myTemplate::sidebar"></div>
+        <div id="admin-info" class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><i class="glyphicon glyphicon-th"></i> 数据列表</h3>
+                </div>
+                <div class="panel-body">
+                    <form class="form-inline" role="form" style="float:left;">
+                        <div class="form-group has-feedback">
+                            <div class="input-group">
+                                <div class="input-group-addon">查询条件</div>
+                                <input class="form-control has-success" type="text" v-model="page.keyword">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-warning" @click="getPage(1)">
+                            </i> 查询
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-danger" style="float:right;margin-left:10px;" @click="deleteAdmins">
+                        <i class="glyphicon glyphicon-remove"></i> 删除
+                    </button>
+                    <button type="button" class="btn btn-primary" style="float:right;" @click="dialogVisible=true">
+                        <i class="glyphicon glyphicon-plus"></i> 新增
+                    </button>
+                    <el-dialog
+                        title="用户管理"
+                        :visible.sync="dialogVisible"
+                        :before-close="resetArgs"
+                        width="30%">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">表单数据</div>
+                            <div class="panel-body">
+                                <form role="form">
+                                    <div class="form-group">
+                                        <label>登陆账号</label>
+                                        <input type="text" class="form-control" v-model="admin.loginAcct" placeholder="请输入登录账号">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>登陆密码</label>
+                                        <input type="text" class="form-control" v-model="admin.userPswd" placeholder="请输入登陆密码">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>用户名称</label>
+                                        <input type="text" class="form-control" v-model="admin.userName" placeholder="请输入用户名称">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>邮箱地址</label>
+                                        <input type="email" class="form-control" v-model="admin.email" placeholder="请输入邮箱地址">
+                                        <p class="help-block label label-warning">请输入合法的邮箱地址，格式为：xxx@xxx.com</p>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <span slot="footer" class="dialog-footer">
+                            <el-button type="primary" @click="manageAdmin">提交</el-button>
+                        </span>
+                    </el-dialog>
+                    <el-dialog
+                            title="角色分配"
+                            :visible.sync="dialogVisible_role_assign"
+                            :before-close="resetArgs_role_assign"
+                            width="30%">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">{{admin.loginAcct}}</div>
+                            <div class="panel-body">
+                                <table class="table  table-bordered">
+                                    <thead>
+                                    <tr>
+                                        <th width="60">#</th>
+                                        <th width="30"></th>
+                                        <th>名称</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr v-for="item in roles">
+                                        <td>{{item.id}}</td>
+                                        <td><input type="checkbox" v-model="assignedRoles" :value="item.id"></td>
+                                        <td>{{item.name}}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <span slot="footer" class="dialog-footer">
+                            <el-button type="primary" @click="assignRole">提交</el-button>
+                        </span>
+                    </el-dialog>
+                    <br>
+                    <hr style="clear:both;">
+                    <div class="table-responsive">
+                        <table class="table  table-bordered">
+                            <thead>
+                            <tr>
+                                <th width="30">#</th>
+                                <th width="30"></th>
+                                <th>账号</th>
+                                <th>名称</th>
+                                <th>邮箱地址</th>
+                                <th width="100">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr v-for="item in admins">
+                                <td>{{item.id}}</td>
+                                <td><input type="checkbox" v-model="checkedAdminId" :value="item.id"></td>
+                                <td>{{item.loginAcct}}</td>
+                                <td>{{item.userName}}</td>
+                                <td>{{item.email}}</td>
+                                <td>
+                                    <button type="button" class="btn btn-success btn-xs" @click="getAssignedRole(item)">
+                                        <i class=" glyphicon glyphicon-check"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-primary btn-xs" @click="updateAdmin(item)">
+                                        <i class=" glyphicon glyphicon-pencil"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                            <tfoot>
+                           <div class="pagination">
+                               <el-pagination
+                                   background
+                                   layout="prev, pager, next"
+                                   :current-page="page.pageNum"
+                                   :page-size="page.pageSize"
+                                   :total="page.total"
+                                   @current-change="getPage"
+                               >
+                               </el-pagination>
+                           </div>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    new Vue({
+        el: "#navbar",
+        data: {
+            admin: JSON.parse(sessionStorage.getItem("admin"))
+        },
+        methods: {
+            logout: function () {
+                // 强制 Session 失效
+                sessionStorage.clear();
+            }
+        }
+    });
+
+    new Vue({
+        el: "#admin-info",
+        data: {
+            admins: [],
+            checkedAdminId: [],
+            page: {
+                pageNum: 1,
+                pageSize: 5,
+                total: 0,
+                keyword: ""
+            },
+
+            dialogVisible: false,
+            action: "insert",
+
+            roles: [],
+            assignedRoles: [],
+            dialogVisible_role_assign: false,
+
+            admin: {
+                id: null,
+                loginAcct: "",
+                userPswd: "",
+                userName: "",
+                email: ""
+            }
+        },
+        methods: {
+            getPage: function (val) {
+                axios({
+                    method: "post",
+                    url: "/admin/get/admin-page.json",
+                    baseURL: "/theCrowdFunding",
+                    params: {
+                        keyword: this.page.keyword,
+                        pageNum: val
+                    }
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            // 将返回的 admin 对象存入 admins 数组
+                            this.admins = res.data.opData.list;
+                            // 其它分页需要的数据
+                            this.page.pageNum =res.data.opData.pageNum;
+                            this.page.pageSize = res.data.opData.pageSize;
+                            this.page.total = res.data.opData.total;
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            manageAdmin: function () {
+                let caller = this;
+                let actionURL = this.action === "insert" ? "admin/insert/admin.json" : "admin/update/admin.json";
+                axios({
+                    method: "post",
+                    url: actionURL,
+                    baseURL: "/theCrowdFunding",
+                    params: {
+                        id: this.admin.id,
+                        loginAcct: this.admin.loginAcct,
+                        userPswd: this.admin.userPswd,
+                        userName: this.admin.userName,
+                        email: this.admin.email
+                    }
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            layer.msg("操作成功！");
+                            caller.resetArgs();
+                            this.getPage(caller.page.pageNum);
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            updateAdmin: function (item) {
+                this.dialogVisible = true;
+                this.action = "update";
+
+                this.admin.id = item.id;
+                this.admin.loginAcct = item.loginAcct;
+                this.admin.userPswd = "";
+                this.admin.userName = item.userName;
+                this.admin.email = item.email;
+            },
+            deleteAdmins: function () {
+                let caller = this;
+                axios({
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    method: "post",
+                    url: "admin/remove/admin.json",
+                    baseURL: "/theCrowdFunding",
+                    data: JSON.stringify(this.checkedAdminId),
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            layer.msg("操作成功！");
+                            this.getPage(caller.page.pageNum);
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            resetArgs: function () {
+                this.dialogVisible = false;
+                this.method = "insert";
+
+                this.admin.id = null;
+                this.admin.loginAcct = "";
+                this.admin.userPswd = "";
+                this.admin.userName = "";
+                this.admin.email = "";
+            },
+            getAssignedRole: function (item) {
+                let caller = this;
+                this.admin.id = item.id;
+                this.admin.loginAcct = item.loginAcct;
+                axios({
+                    method: "post",
+                    url: "admin/get/role.json",
+                    baseURL: "/theCrowdFunding"
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            caller.roles = res.data.opData;
+                            layer.msg("角色查询成功！");
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+                axios({
+                    method: "post",
+                    url: "admin/get/assigned-role.json",
+                    baseURL: "/theCrowdFunding",
+                    params: {
+                        adminId: item.id
+                    }
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            caller.assignedRoles = res.data.opData;
+                            layer.msg("已分配角色查询成功！");
+                            caller.dialogVisible_role_assign = true;
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            assignRole: function () {
+                let myJSON = {
+                    adminId: this.admin.id,
+                    assignedRoles: JSON.stringify(this.assignedRoles)
+                };
+                axios({
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    method: "post",
+                    url: "admin/update/assigned-role.json",
+                    baseURL: "/theCrowdFunding",
+                    data: JSON.stringify(myJSON)
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            layer.msg("分配角色已更新！");
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+
+                this.resetArgs();
+                this.resetArgs_role_assign();
+            },
+            resetArgs_role_assign: function () {
+                this.dialogVisible_role_assign = false;
+
+                this.roles = [];
+                this.assignedRoles = [];
+            }
+        },
+        mounted:function () {
+            this.getPage(1);
+        }
+    });
+</script>
+<script type="text/javascript">
+    $(function () {
+        $(".list-group-item").click(function () {
+            if ($(this).find("ul")) {
+                $(this).toggleClass("tree-closed");
+                if ($(this).hasClass("tree-closed")) {
+                    $("ul", this).hide("fast");
+                } else {
+                    $("ul", this).show("fast");
+                }
+            }
+        });
+    });
+    $("tbody .btn-success").click(function () {
+        window.location.href = "assignRole.html";
+    });
+    $("tbody .btn-primary").click(function () {
+        window.location.href = "edit.html";
+    });
+</script>
+</body>
+</html>

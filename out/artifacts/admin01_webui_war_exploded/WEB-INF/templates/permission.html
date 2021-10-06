@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<html lang="zh-CN">
+<head th:replace="myTemplate::header"></head>
+<body>
+<nav th:replace="myTemplate::navbar"></nav>
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="myTemplate::sidebar"></div>
+        <div id="menu-tree" class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <i class="glyphicon glyphicon-th-list"></i> 权限菜单列表
+                    <div style="float: right; cursor: pointer;" data-toggle="modal" data-target="#myModal">
+                        <i class="glyphicon glyphicon-question-sign"></i>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="custom-tree-container">
+                        <div class="block">
+                            <el-tree
+                                :data="root"
+                                node-key="id"
+                                default-expand-all
+                                :expand-on-click-node="false">
+                                    <span class="custom-tree-node" slot-scope="{node, data}">
+                                        <span><i :class="data.icon"></i></span>
+                                        <span><a :href="data.url">{{ data.name }}</a></span>
+                                        <span>
+                                            <button type="button" class="btn btn-success btn-xs" @click="getAssignedAuth(data)">
+                                                <i class=" glyphicon glyphicon-check"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-primary btn-xs" @click="insertMenu(data)">
+                                                <i class="glyphicon glyphicon-plus"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-danger btn-xs" @click="deleteMenus(data)">
+                                                <i class="glyphicon glyphicon-remove"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-primary btn-xs" @click="updateMenu(data)">
+                                                <i class="glyphicon glyphicon-pencil"></i>
+                                            </button>
+                                        </span>
+                                    </span>
+                            </el-tree>
+                        </div>
+                    </div>
+                    <el-dialog
+                            title="菜单管理"
+                            :visible.sync="dialogVisible"
+                            :before-close="resetArgs"
+                            width="30%">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">表单数据</div>
+                            <div class="panel-body">
+                                <form role="form">
+                                    <div class="form-group">
+                                        <label>节点名称</label>
+                                        <input type="text" class="form-control" v-model="menu.name" placeholder="请输入节点名称">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>URL地址</label>
+                                        <input type="text" class="form-control" v-model="menu.url" placeholder="请输入URL地址">
+                                    </div>
+                                    <i class="glyphicon glyphicon-th-list"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-th-list" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-dashboard"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-dashboard" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon glyphicon-tasks"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon glyphicon-tasks" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-user"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-user" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-king"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-king" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-lock"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-lock" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-ok"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-ok" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-check"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-check" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-th-large"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-th-large" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-picture"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-picture" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-equalizer"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-equalizer" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-random"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-random" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-hdd"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-hdd" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-comment"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-comment" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-list"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-list" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-tags"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-tags" v-model="menu.icon" />
+                                    <i class="glyphicon glyphicon-list-alt"></i>
+                                    <input type="radio" name="icon" value="glyphicon glyphicon-list-alt" v-model="menu.icon" />
+                                </form>
+                            </div>
+                        </div>
+                        <span slot="footer" class="dialog-footer">
+                                <el-button type="primary" @click="manageMenu">提交</el-button>
+                            </span>
+                    </el-dialog>
+                    <el-dialog
+                            title="权限分配"
+                            :visible.sync="dialogVisible_auth_assign"
+                            :before-close="resetArgs_auth_assign"
+                            width="30%">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">{{menu.name}}</div>
+                            <div class="panel-body">
+                                <table class="table  table-bordered">
+                                    <thead>
+                                    <tr>
+                                        <th width="60">#</th>
+                                        <th width="30"></th>
+                                        <th>名称</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr v-for="item in auths">
+                                        <td>{{item.id}}</td>
+                                        <td><input type="checkbox" v-model="assignedAuths" :value="item.id"></td>
+                                        <td>{{item.title}}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <span slot="footer" class="dialog-footer">
+                            <el-button type="primary" @click="assignAuth">提交</el-button>
+                        </span>
+                    </el-dialog>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    new Vue({
+        el: "#navbar",
+        data: {
+            admin: JSON.parse(sessionStorage.getItem("admin"))
+        },
+        methods: {
+            logout: function () {
+                // 强制 Session 失效
+                sessionStorage.clear();
+            }
+        }
+    });
+
+    new Vue({
+        el: "#menu-tree",
+        data: {
+            root: [],
+
+            dialogVisible: false,
+            action: "insert",
+
+            auths: [],
+            assignedAuths: [],
+            dialogVisible_auth_assign: false,
+
+            menu: {
+                id: null,
+                pid: null,
+                name: "",
+                icon: "glyphicon glyphicon-check",
+                url: ""
+            }
+        },
+        methods: {
+            getTree: function () {
+                axios({
+                    method: "post",
+                    url: "admin/get/menu-tree.json",
+                    baseURL: "/theCrowdFunding"
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            this.root = [];
+                            // 将返回的 root 对象存入
+                            this.root.push(res.data.opData);
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            manageMenu: function () {
+                this.dialogVisible = true;
+
+                let caller = this;
+                let actionURL = this.action === "insert" ? "admin/insert/menu.json" : "admin/update/menu.json";
+                axios({
+                    method: "post",
+                    url: actionURL,
+                    baseURL: "/theCrowdFunding",
+                    params: {
+                        id: this.menu.id,
+                        pid: this.menu.pid,
+                        name: this.menu.name,
+                        icon: this.menu.icon,
+                        url: this.menu.url
+                    }
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            layer.msg("操作成功！");
+                            caller.resetArgs();
+                            this.getTree();
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            insertMenu: function (item) {
+                this.dialogVisible = true;
+
+                this.menu.pid = item.id;
+            },
+            updateMenu: function (item) {
+                this.dialogVisible = true;
+                this.action = "update";
+
+                this.menu.id = item.id;
+                this.menu.pid = item.pid;
+                this.menu.name = item.name;
+                this.menu.icon = item.icon;
+                this.menu.url = item.url;
+            },
+            deleteMenus: function (item) {
+                axios({
+                    method: "post",
+                    url: "admin/remove/menu.json",
+                    baseURL: "/theCrowdFunding",
+                    params: {
+                        id: item.id,
+                    }
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            layer.msg("操作成功！");
+                            this.getTree();
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            resetArgs: function () {
+                this.dialogVisible = false;
+                this.method = "insert";
+
+                this.menu.id = null;
+                this.menu.pid = null;
+                this.menu.name = "";
+                this.menu.icon = "glyphicon glyphicon-check";
+                this.menu.url = "";
+            },
+            getAssignedAuth: function (item) {
+                let caller = this;
+                this.menu.id = item.id;
+                this.menu.name = item.name;
+                axios({
+                    method: "post",
+                    url: "admin/get/auth.json",
+                    baseURL: "/theCrowdFunding",
+                    params: {
+                        categoryId: 1,
+                    }
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            caller.auths = res.data.opData;
+                            layer.msg("权限查询成功！");
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+                axios({
+                    method: "post",
+                    url: "admin/get/menu-assigned-auth.json",
+                    baseURL: "/theCrowdFunding",
+                    params: {
+                        menuId: item.id
+                    }
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            caller.assignedAuths = res.data.opData;
+                            layer.msg("已分配权限查询成功！");
+                            caller.dialogVisible_auth_assign = true;
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            assignAuth: function () {
+                let myJSON = {
+                    menuId: this.menu.id,
+                    assignedAuths: JSON.stringify(this.assignedAuths)
+                };
+                axios({
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    method: "post",
+                    url: "admin/update/menu-assigned-auth.json",
+                    baseURL: "/theCrowdFunding",
+                    data: JSON.stringify(myJSON)
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            layer.msg("分配权限已更新！");
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+
+                this.resetArgs();
+                this.resetArgs_auth_assign();
+            },
+            resetArgs_auth_assign: function () {
+                this.dialogVisible_auth_assign = false;
+
+                this.auths = [];
+                this.assignedAuths = [];
+            }
+        },
+        mounted: function () {
+            this.getTree();
+        }
+    });
+</script>
+<script type="text/javascript">
+    $(function () {
+        $(".list-group-item").click(function () {
+            if ($(this).find("ul")) {
+                $(this).toggleClass("tree-closed");
+                if ($(this).hasClass("tree-closed")) {
+                    $("ul", this).hide("fast");
+                } else {
+                    $("ul", this).show("fast");
+                }
+            }
+        });
+    });
+    $("tbody .btn-success").click(function () {
+        window.location.href = "assignRole.html";
+    });
+    $("tbody .btn-primary").click(function () {
+        window.location.href = "edit.html";
+    });
+</script>
+</body>
+</html>

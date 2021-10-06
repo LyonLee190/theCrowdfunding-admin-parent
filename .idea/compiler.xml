@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="admin03-entity" />
+        <module name="admin01-webui" />
+        <module name="admin02-component" />
+        <module name="common02-reverse" />
+        <module name="common01-util" />
+      </profile>
+    </annotationProcessing>
+  </component>
+</project>

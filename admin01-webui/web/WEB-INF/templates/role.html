@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<html lang="zh-CN">
+<head th:replace="myTemplate::header"></head>
+<body>
+<nav th:replace="myTemplate::navbar"></nav>
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="myTemplate::sidebar"></div>
+        <div id="role-info" class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><i class="glyphicon glyphicon-th"></i> 数据列表</h3>
+                </div>
+                <div class="panel-body">
+                    <form class="form-inline" role="form" style="float:left;">
+                        <div class="form-group has-feedback">
+                            <div class="input-group">
+                                <div class="input-group-addon">查询条件</div>
+                                <input class="form-control has-success" type="text" v-model="page.keyword">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-warning" @click="getPage(1)">
+                            </i> 查询
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-danger" style="float:right;margin-left:10px;"
+                            @click="deleteRoles">
+                        <i class=" glyphicon glyphicon-remove"></i> 删除
+                    </button>
+                    <button type="button" class="btn btn-primary" style="float:right;" @click="dialogVisible=true">
+                        <i class="glyphicon glyphicon-plus"></i> 新增
+                    </button>
+                    <el-dialog
+                            title="角色管理"
+                            :visible.sync="dialogVisible"
+                            :before-close="resetArgs"
+                            width="30%">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">表单数据</div>
+                            <div class="panel-body">
+                                <form role="form">
+                                    <div class="form-group">
+                                        <label>角色名称</label>
+                                        <input type="text" class="form-control" v-model="role.name" placeholder="请输入角色名称">
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <span slot="footer" class="dialog-footer">
+                                <el-button type="primary" @click="manageRole">提交</el-button>
+                            </span>
+                    </el-dialog>
+                    <el-dialog
+                            title="权限分配"
+                            :visible.sync="dialogVisible_auth_assign"
+                            :before-close="resetArgs_auth_assign"
+                            width="30%">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">{{role.name}}</div>
+                            <div class="panel-body">
+                                <table class="table  table-bordered">
+                                    <thead>
+                                    <tr>
+                                        <th width="60">#</th>
+                                        <th width="30"></th>
+                                        <th>名称</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr v-for="item in auths">
+                                        <td>{{item.id}}</td>
+                                        <td><input type="checkbox" v-model="assignedAuths" :value="item.id"></td>
+                                        <td>{{item.title}}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <span slot="footer" class="dialog-footer">
+                            <el-button type="primary" @click="assignAuth">提交</el-button>
+                        </span>
+                    </el-dialog>
+                    <br>
+                    <hr style="clear:both;">
+                    <div class="table-responsive">
+                        <table class="table  table-bordered">
+                            <thead>
+                            <tr>
+                                <th width="30">#</th>
+                                <th width="30"></th>
+                                <th>名称</th>
+                                <th width="100">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr v-for="item in roles">
+                                <td>{{item.id}}</td>
+                                <td><input type="checkbox" v-model="checkedRoleId" :value="item.id"></td>
+                                <td>{{item.name}}</td>
+                                <td>
+                                    <button type="button" class="btn btn-success btn-xs" @click="getAssignedAuth(item)">
+                                        <i class=" glyphicon glyphicon-check"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-primary btn-xs" @click="updateRole(item)">
+                                        <i class=" glyphicon glyphicon-pencil"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                            <tfoot>
+                            <div class="pagination">
+                                <el-pagination
+                                        background
+                                        layout="prev, pager, next"
+                                        :current-page="page.pageNum"
+                                        :page-size="page.pageSize"
+                                        :total="page.total"
+                                        @current-change="getPage"
+                                >
+                                </el-pagination>
+                            </div>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    new Vue({
+        el: "#navbar",
+        data: {
+            admin: JSON.parse(sessionStorage.getItem("admin"))
+        },
+        methods: {
+            logout: function () {
+                // 强制 Session 失效
+                sessionStorage.clear();
+            }
+        }
+    });
+
+    new Vue({
+        el: "#role-info",
+        data: {
+            roles: [],
+            checkedRoleId: [],
+            page: {
+                pageNum: 1,
+                pageSize: 5,
+                total: 0,
+                keyword: ""
+            },
+
+            dialogVisible: false,
+            action: "insert",
+
+            auths: [],
+            assignedAuths: [],
+            dialogVisible_auth_assign: false,
+
+            role: {
+                id: null,
+                name: ""
+            }
+        },
+        methods: {
+            getPage: function (val) {
+                axios({
+                    method: "post",
+                    url: "/admin/get/role-page.json",
+                    baseURL: "/theCrowdFunding",
+                    params: {
+                        keyword: this.page.keyword,
+                        pageNum: val
+                    }
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            // 将返回的 role 对象存入 roles 数组
+                            this.roles = res.data.opData.list;
+                            // 其它分页需要的数据
+                            this.page.pageNum = res.data.opData.pageNum;
+                            this.page.pageSize = res.data.opData.pageSize;
+                            this.page.total = res.data.opData.total;
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            manageRole: function () {
+                let caller = this;
+                let actionURL = this.action === "insert" ? "admin/insert/role.json" : "admin/update/role.json";
+                axios({
+                    method: "post",
+                    url: actionURL,
+                    baseURL: "/theCrowdFunding",
+                    params: {
+                        id: this.role.id,
+                        name: this.role.name,
+                    }
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            layer.msg("操作成功！");
+                            caller.resetArgs();
+                            this.getPage(caller.page.pageNum);
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            updateRole: function (item) {
+                this.dialogVisible = true;
+                this.action = "update";
+
+                this.role.id = item.id;
+                this.role.name = item.name;
+            },
+            deleteRoles: function () {
+                let caller = this;
+                axios({
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    method: "post",
+                    url: "admin/remove/role.json",
+                    baseURL: "/theCrowdFunding",
+                    data: JSON.stringify(this.checkedRoleId),
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            layer.msg("操作成功！");
+                            this.getPage(caller.page.pageNum);
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            resetArgs: function () {
+                this.dialogVisible = false;
+                this.method = "insert";
+
+                this.role.id = null;
+                this.role.name = "";
+            },
+            getAssignedAuth: function (item) {
+                let caller = this;
+                this.role.id = item.id;
+                this.role.name = item.name;
+                axios({
+                    method: "post",
+                    url: "admin/get/auth.json",
+                    baseURL: "/theCrowdFunding",
+                    params: {
+                        categoryId: 2,
+                    }
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            caller.auths = res.data.opData;
+                            layer.msg("权限查询成功！");
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+                axios({
+                    method: "post",
+                    url: "admin/get/role-assigned-auth.json",
+                    baseURL: "/theCrowdFunding",
+                    params: {
+                        roleId: item.id
+                    }
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            caller.assignedAuths = res.data.opData;
+                            layer.msg("已分配权限查询成功！");
+                            caller.dialogVisible_auth_assign = true;
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+            },
+            assignAuth: function () {
+                let myJSON = {
+                    roleId: this.role.id,
+                    assignedAuths: JSON.stringify(this.assignedAuths)
+                };
+                axios({
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    method: "post",
+                    url: "admin/update/role-assigned-auth.json",
+                    baseURL: "/theCrowdFunding",
+                    data: JSON.stringify(myJSON)
+                }).then(
+                    res => {
+                        if (res.data.opResult === "SUCCESS") {
+                            layer.msg("分配权限已更新！");
+                        } else {
+                            layer.msg(res.data.opMsg);
+                        }
+                    }).catch(
+                    err => {
+                        console.log(err);
+                    }
+                );
+
+                this.resetArgs();
+                this.resetArgs_auth_assign();
+            },
+            resetArgs_auth_assign: function () {
+                this.dialogVisible_auth_assign = false;
+
+                this.auths = [];
+                this.assignedAuths = [];
+            }
+        },
+        mounted: function () {
+            this.getPage(1);
+        }
+    });
+</script>
+<script type="text/javascript">
+    $(function () {
+        $(".list-group-item").click(function () {
+            if ($(this).find("ul")) {
+                $(this).toggleClass("tree-closed");
+                if ($(this).hasClass("tree-closed")) {
+                    $("ul", this).hide("fast");
+                } else {
+                    $("ul", this).show("fast");
+                }
+            }
+        });
+    });
+    $("tbody .btn-success").click(function () {
+        window.location.href = "assignRole.html";
+    });
+    $("tbody .btn-primary").click(function () {
+        window.location.href = "edit.html";
+    });
+</script>
+</body>
+</html>
