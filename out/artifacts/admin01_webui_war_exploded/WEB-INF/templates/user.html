@@ -192,6 +192,7 @@
                     method: "post",
                     url: "/admin/get/admin-page.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     params: {
                         keyword: this.page.keyword,
                         pageNum: val
@@ -221,6 +222,7 @@
                     method: "post",
                     url: actionURL,
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     params: {
                         id: this.admin.id,
                         loginAcct: this.admin.loginAcct,
@@ -262,6 +264,7 @@
                     method: "post",
                     url: "admin/remove/admin.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     data: JSON.stringify(this.checkedAdminId),
                 }).then(
                     res => {
@@ -294,7 +297,8 @@
                 axios({
                     method: "post",
                     url: "admin/get/role.json",
-                    baseURL: "/theCrowdFunding"
+                    baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                 }).then(
                     res => {
                         if (res.data.opResult === "SUCCESS") {
@@ -312,6 +316,7 @@
                     method: "post",
                     url: "admin/get/assigned-role.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     params: {
                         adminId: item.id
                     }
@@ -342,6 +347,7 @@
                     method: "post",
                     url: "admin/update/assigned-role.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     data: JSON.stringify(myJSON)
                 }).then(
                     res => {

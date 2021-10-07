@@ -202,6 +202,7 @@
                     method: "post",
                     url: actionURL,
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     params: {
                         id: this.menu.id,
                         pid: this.menu.pid,
@@ -244,6 +245,7 @@
                     method: "post",
                     url: "admin/remove/menu.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     params: {
                         id: item.id,
                     }
@@ -279,6 +281,7 @@
                     method: "post",
                     url: "admin/get/auth.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     params: {
                         categoryId: 1,
                     }
@@ -299,6 +302,7 @@
                     method: "post",
                     url: "admin/get/menu-assigned-auth.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     params: {
                         menuId: item.id
                     }
@@ -329,6 +333,7 @@
                     method: "post",
                     url: "admin/update/menu-assigned-auth.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     data: JSON.stringify(myJSON)
                 }).then(
                     res => {

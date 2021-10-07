@@ -9,15 +9,14 @@ import com.spike.crowd.util.ResultEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpSession;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 @RestController
+@CrossOrigin
 public class AdminHandler {
 
     @Autowired
@@ -26,12 +25,15 @@ public class AdminHandler {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @RequestMapping("admin/login.json")
-    public ResultEntity<Admin> login(String loginAcct, String userPswd) throws NoSuchAlgorithmException {
+    public ResultEntity<Admin> login(HttpSession httpSession, String loginAcct, String userPswd) throws NoSuchAlgorithmException {
 
         Admin adminByLoginAcct = adminService.getAdminByLoginAcct(loginAcct);
         if (!Encryption.encrypt(userPswd).equals(adminByLoginAcct.getUserPswd())) {
             throw new RuntimeException(CrowdConstant.MESSAGE_LOGIN_FAILED);
         }
+
+        logger.info(httpSession.getId());
+        httpSession.setAttribute("admin", adminByLoginAcct);
 
         return ResultEntity.successWithData(adminByLoginAcct);
     }

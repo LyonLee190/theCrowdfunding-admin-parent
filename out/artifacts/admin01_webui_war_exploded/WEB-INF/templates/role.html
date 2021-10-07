@@ -173,6 +173,7 @@
                     method: "post",
                     url: "/admin/get/role-page.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     params: {
                         keyword: this.page.keyword,
                         pageNum: val
@@ -202,6 +203,7 @@
                     method: "post",
                     url: actionURL,
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     params: {
                         id: this.role.id,
                         name: this.role.name,
@@ -237,6 +239,7 @@
                     method: "post",
                     url: "admin/remove/role.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     data: JSON.stringify(this.checkedRoleId),
                 }).then(
                     res => {
@@ -267,6 +270,7 @@
                     method: "post",
                     url: "admin/get/auth.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     params: {
                         categoryId: 2,
                     }
@@ -287,6 +291,7 @@
                     method: "post",
                     url: "admin/get/role-assigned-auth.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     params: {
                         roleId: item.id
                     }
@@ -317,6 +322,7 @@
                     method: "post",
                     url: "admin/update/role-assigned-auth.json",
                     baseURL: "/theCrowdFunding",
+                    withCredentials: true,
                     data: JSON.stringify(myJSON)
                 }).then(
                     res => {

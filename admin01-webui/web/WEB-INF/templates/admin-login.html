@@ -53,6 +53,8 @@
                     method: "post",
                     url: "admin/login.json",
                     baseURL: "/theCrowdFunding",
+                    // 表示跨域请求时是否需要使用凭证
+                    withCredentials: true,
                     params: {
                         loginAcct: this.loginAcct,
                         userPswd: this.userPswd
